@@ -54,7 +54,7 @@ Next for each student we calculate the following **total disappointment**, being
                 ceil_div(**student break importance[student]** × **break disappointment[student]** +  
                 (`10` - **student break importance[student]**) × **preference disappointment[student]**), `10`)
 
-Finally, our objective is to :exclamation:**minimize sum o squared total disappointments**:exclamation:
+Finally, our objective is to :exclamation:**minimize sum of squared total disappointments**:exclamation:
 
 ### Output
 
