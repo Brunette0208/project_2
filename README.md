@@ -5,7 +5,7 @@ It has been directly inspired by the system working at the AGH University (Facul
 
 ## Competition :boxing_glove:
 
-Check out the :boxing_glove: [the competition scoreboard on wiki](https://gitlab.com/agh-courses/23/cp/fast-track/project/-/wikis/Scoreboard). :boxing_glove:
+Check out the :boxing_glove: [the competition scoreboard on wiki](https://gitlab.com/agh-courses/23/cp/isi-cp-projects/proj-b/-/wikis/Scoreboard). :boxing_glove:
 
 ## Instructions
 
@@ -54,7 +54,7 @@ Next for each student we calculate the following **total disappointment**, being
                 ceil_div(**student break importance[student]** × **break disappointment[student]** +  
                 (`10` - **student break importance[student]**) × **preference disappointment[student]**), `10`)
 
-Finally, our objective is to :exclamation:**minimize sum o squared total disappointments**:exclamation:
+Finally, our objective is to :exclamation:**minimize sum of squared total disappointments**:exclamation:
 
 ### Output
 
