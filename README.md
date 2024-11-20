@@ -3,9 +3,9 @@
 This project concerns assigning students to groups given various constraints and preferences.
 It has been directly inspired by the system working at the AGH University (Faculty of Computer Science, Electronics and Telecommunications).
 
-## Competition :boxing_glove:
+## Competition :construction:
 
-Check out the :boxing_glove: [the competition scoreboard on wiki](https://gitlab.com/agh-courses/24/cp/cs-projects/group-enroll/-/wikis/Scoreboard). :boxing_glove:
+Soon you will be able to check the :construction: [the competition scoreboard on wiki](https://gitlab.com/agh-courses/24/cp/cs-projects/group-enroll/-/wikis/Scoreboard). :construction:
 
 ## Instructions
 
