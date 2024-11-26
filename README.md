@@ -5,7 +5,7 @@ It has been directly inspired by the system working at the AGH University (Facul
 
 ## Competition :construction:
 
-Soon you will be able to check the :construction: [the competition scoreboard on wiki](https://gitlab.com/agh-courses/24/cp/cs-projects/group-enroll/-/wikis/Scoreboard). :construction:
+Soon you will be able to check the :construction: [the competition scoreboard on wiki](https://gitlab.com/agh-courses/24/cp/isi_projects/group-enroll/-/wikis/Scoreboard). :construction:
 
 ## Instructions
 
