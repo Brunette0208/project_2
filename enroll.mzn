@@ -66,7 +66,7 @@ constraint forall(s in Student)(
   break_disappointment[s] = 
   let {
     var Time: first_class = 
-      min([group_start[g] | c in Class, g in Group where assignment[s, c] = g /\ g != exclusion]);
+      min([group_start[g] | c in Class, let {var Group: g = assignment[s, c];} in g != exclusion]);
     var Time: last_class = max([group_start[g] + class_duration[group_class[g]] | c in Class, let {var Group: g = assignment[s, c];} in g != exclusion]),
     var Time: total_learning_time = sum([class_duration[group_class[g]] | c in Class, let {var Group: g = assignment[s, c];} in g != exclusion])
   } in
