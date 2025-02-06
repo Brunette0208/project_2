@@ -39,10 +39,7 @@ array[Student, Class] of var Group: assignment;
 
 % Constraints
 constraint forall(s in Student, c in Class)(
-  let {
-      var Group: g = assignment[s, c]
-  } in 
-  g in Group \/ g = exclusion
+  let { var Group: g = assignment[s, c]; } in (g in Group \/ g = exclusion);
 );
 
 % Ensure no bilocation (no student attends conflicting groups at the same time)
@@ -67,20 +64,21 @@ constraint forall(s in Student, g1 in Group, g2 in Group where g1 != g2)(
 array[Student] of var int: break_disappointment;
 constraint forall(s in Student)(
   break_disappointment[s] = 
-    let{
-      var Time: first_class = min([group_start[g] | c in Class, let {var Group: g = assignment[s, c]} in g != exclusion]),
-      var Time: last_class = max([group_start[g] + class_duration[group_class[g]] | c in Class, let {var Group: g = assignment[s, c]} in g != exclusion]),
-      var Time: total_learning_time = sum([class_duration[group_class[g]] | c in Class, let {var Group: g = assignment[s, c]} in g != exclusion])
-    } in
-    max(0, (last_class - first_class) - total_learning_time),
-    n_time_units_in_hour
+  let {
+    var Time: first_class = 
+      min([group_start[g] | c in Class, g in Group where assignment[s, c] = g /\ g != exclusion]);
+    var Time: last_class = max([group_start[g] + class_duration[group_class[g]] | c in Class, let {var Group: g = assignment[s, c];} in g != exclusion]),
+    var Time: total_learning_time = sum([class_duration[group_class[g]] | c in Class, let {var Group: g = assignment[s, c];} in g != exclusion])
+  } in
+    max(0, (last_class - first_class) - total_learning_time) div n_time_units_in_hour
 );
 
 % Calculate Preference disappointment
 array[Student] of var int: preference_disappointment;
 constraint forall(s in Student)(
-  preference_disappointment[s] = sum(c in Class)(
-    let {var Group: g = assignment[s, c]} in
+  preference_disappointment[s] =
+   sum(c in Class)(
+    let {var Group: g = assignment[s, c];} in
     if g != exclusion then abs(student_prefers[s, g]) else 0
   )
 );
