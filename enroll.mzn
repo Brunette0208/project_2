@@ -80,8 +80,7 @@ constraint forall(s in Student)(
   preference_disappointment[s] =
    sum(c in Class)(
     let { var Group: g = assignment[s, c]; } in
-    if g != exclusion then abs(student_prefers[s, g]) else 0
-    )
+    if g != exclusion then abs(student_prefers[s, g]) else 0 )
 );
 
 % Calculate total disappointment
