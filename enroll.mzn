@@ -6,7 +6,7 @@ int: n_groups;
 int: n_time_units_in_hour;
 int: exclusion = -1;
 
-int: n_building;
+% int: n_building;
 
 set of int: Student = 1..n_students;
 set of int: Class = 1..n_classes;
@@ -27,8 +27,8 @@ array[Group] of Time: group_start;
 array[Group] of Day: group_day;
 array[Group, Group] of bool: groups_conflicts;
 
-array[Group] of int: group_building;
-array[1..n_building, 1..n_building] of int: travel_time;
+%array[Group] of int: group_building;
+%array[1..n_building, 1..n_building] of int: travel_time;
 % array[Building, Building] of int: travel_time;
 
 % helper function
