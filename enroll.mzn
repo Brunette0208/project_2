@@ -28,7 +28,8 @@ array[Group] of Day: group_day;
 array[Group, Group] of bool: groups_conflicts;
 
 array[Group] of int: group_building;
-array[Building, Building] of int: travel_time;
+array[1..n_building, 1..n_building] of int: travel_time;
+% array[Building, Building] of int: travel_time;
 
 % helper function
 function var int: ceil_div(var int: x, var int: y) =
@@ -39,7 +40,7 @@ array[Student, Class] of var Group: assignment;
 
 % Constraints
 constraint forall(s in Student, c in Class)(
-  let { var Group: g = assignment[s, c]; } in (g in Group \/ g = exclusion);
+  let { var Group: g = assignment[s, c]; } in (g in Group \/ g = exclusion)
 );
 
 % Ensure no bilocation (no student attends conflicting groups at the same time)
@@ -66,9 +67,9 @@ constraint forall(s in Student)(
   break_disappointment[s] = 
   let {
     var Time: first_class = 
-      min([group_start[g] | c in Class, let {var Group: g = assignment[s, c];} in g != exclusion]);
-    var Time: last_class = max([group_start[g] + class_duration[group_class[g]] | c in Class, let {var Group: g = assignment[s, c];} in g != exclusion]),
-    var Time: total_learning_time = sum([class_duration[group_class[g]] | c in Class, let {var Group: g = assignment[s, c];} in g != exclusion])
+      min([group_start[g] | c in Class, g in Group where assignment[s, c] = g]);
+    var Time: last_class = max([group_start[g] + class_duration[group_class[g]] | c in Class, g in Group where assignment[s, c] = g]);
+    var Time: total_learning_time = sum([class_duration[group_class[g]] | c in Class, g in Group where assignment[s, c] = g]);
   } in
     max(0, (last_class - first_class) - total_learning_time) div n_time_units_in_hour
 );
@@ -99,7 +100,8 @@ solve minimize objective;
 
 % Output
 output [
-  "assignment = [" ++ concat(["{" ++ concat(["show(assignment[s, c]) | c in Class]) ++ "}" | s in Student]) ++ "]\n",
+  % "assignment = [" ++ concat(["{" ++ concat(["show(assignment[s, c]) | c in Class]) ++ "}" | s in Student]) ++ "]\n",
+  "assignment = [" ++ concat([ "{" ++ concat([show(assignment[s, c]) ++ ", " | c in Class]) ++ "}" | s in Student]) ++ "]\n",
   "total_break_disappointment = " ++ show(sum (s in Student)(break_disappointment[s])) ++ "\n",
   "total_preference_diasappintment = " ++ show(sum(s in Student)(preference_disappointment[s])) ++ "\n",
   "objective = " ++ show(objective) ++ "\n"
