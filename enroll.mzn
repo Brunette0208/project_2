@@ -78,10 +78,10 @@ constraint forall(s in Student)(
 array[Student] of var int: preference_disappointment;
 constraint forall(s in Student)(
   preference_disappointment[s] =
-   sum(c in Class)(
-    let { var Group: g = assignment[s, c]; } in
-    if g != exclusion then abs(student_prefers[s, g]) else 0
-   )
+    sum(c in Class)(
+      let { var Group: g = assignment[s, c]; } in
+      if g != exclusion then abs(student_prefers[s, g]) else 0
+    )
 );
 
 % Calculate total disappointment
@@ -103,6 +103,6 @@ output [
   % "assignment = [" ++ concat(["{" ++ concat(["show(assignment[s, c]) | c in Class]) ++ "}" | s in Student]) ++ "]\n",
   "assignment = [" ++ concat([ "{" ++ concat([show(assignment[s, c]) ++ ", " | c in Class]) ++ "}" | s in Student]) ++ "]\n",
   "total_break_disappointment = " ++ show(sum (s in Student)(break_disappointment[s])) ++ "\n",
-  "total_preference_diasappintment = " ++ show(sum(s in Student)(preference_disappointment[s])) ++ "\n",
+  "total_preference_disappointment = " ++ show(sum(s in Student)(preference_disappointment[s])) ++ "\n",
   "objective = " ++ show(objective) ++ "\n"
 ];
