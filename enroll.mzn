@@ -6,8 +6,6 @@ int: n_groups;
 int: n_time_units_in_hour;
 int: exclusion = -1;
 
-% int: n_building;
-
 set of int: Student = 1..n_students;
 set of int: Class = 1..n_classes;
 set of int: Group = 1..n_groups;
@@ -27,82 +25,73 @@ array[Group] of Time: group_start;
 array[Group] of Day: group_day;
 array[Group, Group] of bool: groups_conflicts;
 
-%array[Group] of int: group_building;
-%array[1..n_building, 1..n_building] of int: travel_time;
-% array[Building, Building] of int: travel_time;
+% Decision Variables
+array[Student, Class] of var Group: assigned_group;
+
+% Helper Variables
+array[Student, Day] of var Time: time_spent_at_university;
+array[Student, Day] of var Time: wasted_time;
+array[Student] of var Time: break_disappointment;
+array[Student] of var int: preference_disappointment;
+array[Student] of var int: total_disappointment;
+
 
 % helper function
 function var int: ceil_div(var int: x, var int: y) =
   x div y + ((x mod y) > 0);
 
-% Decision variable: Assign students to groups
-array[Student, Class] of var Group: assignment;
 
 % Constraints
-constraint forall(s in Student, c in Class)(
-  let { var Group: g = assignment[s, c]; } in (g in Group \/ g = exclusion)
+constraint forall(s in Student, c in Class) (
+    assigned_group[s, c] in {g | g in Group where group_class[g] == c}
 );
 
 % Ensure no bilocation (no student attends conflicting groups at the same time)
-constraint forall(s in Student, g1 in Group, g2 in Group where g1 != g2)(
-  (assignment[s, group_class[g1]] = g1 /\ assignment[s, group_class[g2]] = g2) -> 
-    not groups_conflicts[g1, g2]
+constraint forall(s in Student, g1 in Group, g2 in Group where g1 != g2 /\ group_day[g1] == group_day[g2] /\ groups_conflicts[g1, g2]) (
+    assigned_group[s, group_class[g1]] != g1 \/ assigned_group[s, group_class[g2]] != g2
 );
 
-% Ensure students have enough travel time between Building
-constraint forall(s in Student, g1 in Group, g2 in Group where g1 != g2)(
-  let {
-    var Time: start1 = group_start[g1],
-    var Time: start2 = group_start[g2],
-    var int: b1 = group_building[g1],
-    var int: b2 = group_building[g2],
-  } in
-  (assignment[s, group_class[g1]] = g1 /\ assignment[s, group_class[g2]] = g2) ->
-  (start2 >= start1 + class_duration[group_class[g1]] + travel_time[b1, b2])
+% Calculate time spent at university and wasted time
+constraint forall(s in Student, d in Day) (
+    time_spent_at_university[s, d] = 
+        max([group_start[g] + class_duration[group_class[g]] | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g]) -
+        min([group_start[g] | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g])
+);
+
+constraint forall(s in Student, d in Day) (
+    wasted_time[s, d] = 
+        max(0, time_spent_at_university[s, d] - 
+            sum([class_duration[group_class[g]] | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g]))
 );
 
 % Calculate break disappointment
-array[Student] of var int: break_disappointment;
-constraint forall(s in Student)(
-  break_disappointment[s] = 
-  let {
-    var Time: first_class = 
-      min([group_start[g] | c in Class, g in Group where assignment[s, c] = g]);
-    var Time: last_class = max([group_start[g] + class_duration[group_class[g]] | c in Class, g in Group where assignment[s, c] = g]);
-    var Time: total_learning_time = sum([class_duration[group_class[g]] | c in Class, g in Group where assignment[s, c] = g]);
-  } in
-    max(0, (last_class - first_class) - total_learning_time) div n_time_units_in_hour
+constraint forall(s in Student) (
+    break_disappointment[s] = 
+        ceil_div(sum([wasted_time[s, d] | d in Day]), n_time_units_in_hour)
 );
 
-% Calculate Preference disappointment
-array[Student] of var int: preference_disappointment;
-constraint forall(s in Student)(
-  preference_disappointment[s] =
-    sum(c in Class)(
-      let { var Group: g = assignment[s, c]; } in
-      if g != exclusion then abs(student_prefers[s, g]) else 0
-    )
+% Calculate preference disappointment
+constraint forall(s in Student) (
+    preference_disappointment[s] = 
+        sum([abs(student_prefers[s, assigned_group[s, c]] - student_prefers[s, g]) | c in Class, g in Group where group_class[g] == c])
 );
 
 % Calculate total disappointment
-array[Student] of var int: total_disappointment;
-constraint forall(s in Student)(
-  total_disappointment[s] = ceil_div(
-    student_break_importance[s] * break_disappointment[s] + 
-    (10 - student_break_importance[s]) * preference_disappointment[s], 
-    10
-  )
+constraint forall(s in Student) (
+    total_disappointment[s] = 
+        ceil_div(student_break_importance[s] * break_disappointment[s] +
+                (10 - student_break_importance[s]) * preference_disappointment[s], 10)
 );
 
-% Objective: Minimize the sum of squared total disappointment
-var int: objective = sum(s in Student)(total_disappointment[s] * total_disappointment[s]);
-solve minimize objective;
+% Objective: Minimize the sum of squared total disappointments
+var int: total_squared_disappointment = sum([total_disappointment[s] * total_disappointment[s] | s in Student]);
 
-% Output
+solve minimize total_squared_disappointment;
+
+% Output the results
 output [
-  % "assignment = [" ++ concat(["{" ++ concat(["show(assignment[s, c]) | c in Class]) ++ "}" | s in Student]) ++ "]\n",
-  "assignment = [" ++ concat([ "{" ++ concat([show(assignment[s, c]) ++ ", " | c in Class]) ++ "}" | s in Student]) ++ "]\n",
-  "total_break_disappointment = " ++ show(sum (s in Student)(break_disappointment[s])) ++ "\n",
-  "total_preference_disappointment = " ++ show(sum(s in Student)(preference_disappointment[s])) ++ "\n",
-  "objective = " ++ show(objective) ++ "\n"
+    "assignment = ", show([{assigned_group[s, c] | c in Class} | s in Student]), ";\n",
+    "total_break_disappointment = ", show(sum([break_disappointment[s] | s in Student])), ";\n",
+    "total_preference_disappointment = ", show(sum([preference_disappointment[s] | s in Student])), ";\n",
+    "objective = ", show(total_squared_disappointment), ";\n"
 ];
