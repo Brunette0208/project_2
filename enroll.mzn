@@ -73,7 +73,7 @@ constraint forall(s in Student) (
 % Calculate preference disappointment
 constraint forall(s in Student) (
     preference_disappointment[s] = 
-        sum([abs(student_prefers[s, assigned_group[s, c]] - student_prefers[s, assigned_group [s, c]]) | c in Class])
+        sum([student_prefers[s, g] - student_prefers[s, assigned_group[s, c]] | c in Class, g in Group where group_class[g] == c /\ student_prefers[s, g] > exclusion])
 );
 
 % Calculate total disappointment
