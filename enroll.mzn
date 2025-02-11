@@ -51,11 +51,6 @@ constraint forall(s in Student, g1 in Group, g2 in Group where g1 != g2 /\ group
     assigned_group[s, group_class[g1]] != g1 \/ assigned_group[s, group_class[g2]] != g2
 );
 
-% Ensure students are not assigned to excluded groups
-constraint forall(s in Student, g in Group where student_prefers[s, g] == exclusion) (
-    assigned_group[s, group_class[g]] != g
-);
-
 % Calculate time spent at university and wasted time
 constraint forall(s in Student, d in Day) (
     time_spent_at_university[s, d] =
