@@ -12,7 +12,7 @@ set of int: Group = 1..n_groups;
 set of int: Day = 1..n_days;
 set of int: Time = 0..n_time_units_in_hour * 24;
 set of int: WorkTime = 0..max(Time)*n_days;
-set of int: preference = exclusion..max([student_prefers[s,g] | s in Student, g in Group]);
+set of int: Preference = exclusion..max([student_prefers[s,g] | s in Student, g in Group]);
 
 array[Student] of 0..5: student_break_importance;
 array[Student, Group] of int: student_prefers;
@@ -49,6 +49,11 @@ constraint forall(s in Student, c in Class) (
 % Ensure no bilocation (no student attends conflicting groups at the same time)
 constraint forall(s in Student, g1 in Group, g2 in Group where g1 != g2 /\ group_day[g1] == group_day[g2] /\ groups_conflicts[g1, g2]) (
     assigned_group[s, group_class[g1]] != g1 \/ assigned_group[s, group_class[g2]] != g2
+);
+
+% Ensure students are not assigned to excluded groups
+constraint forall(s in Student, c in Class) (
+    student_prefers[s, assigned_group[s, c]] != exclusion
 );
 
 % Calculate time spent at university and wasted time
