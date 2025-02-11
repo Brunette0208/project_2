@@ -26,7 +26,8 @@ array[Group] of Day: group_day;
 array[Group, Group] of bool: groups_conflicts;
 
 % Decision Variables
-array[Student, Class] of var Group: assigned_group;
+array[Student, Class] of var Opt_Group: assigned_group;
+set of int: Opt_Group = 0..n_groups;
 
 % Helper Variables
 array[Student, Day] of var Time: time_spent_at_university;
@@ -43,7 +44,9 @@ function var int: ceil_div(var int: x, var int: y) =
 
 % Constraints
 constraint forall(s in Student, c in Class) (
-    assigned_group[s, c] in {g | g in Group where group_class[g] == c}
+    if exists (g in Group) (group_class[g] == c /\ student_prefers[s, g] != exclusion) then
+    assigned_group[s, c] in {g | g in Group where group_class[g] == c /\ student_prefers[s, g] != exclusion }
+    else assigned_group[s, c] = 0 endif 
 );
 
 % Ensure no bilocation (no student attends conflicting groups at the same time)
@@ -92,7 +95,7 @@ solve minimize total_squared_disappointment;
 
 % Output the results
 output [
-    "assignment = ", show([{assigned_group[s, c] | c in Class} | s in Student]), ";\n",
+    "assignment = ", show([{assigned_group[s, c] | c in Class where assigned_group[s, c] != 0} | s in Student]), ";\n",
     "total_break_disappointment = ", show(sum([break_disappointment[s] | s in Student])), ";\n",
     "total_preference_disappointment = ", show(sum([preference_disappointment[s] | s in Student])), ";\n",
     "objective = ", show(total_squared_disappointment), ";\n"
