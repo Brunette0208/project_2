@@ -45,8 +45,10 @@ function var int: ceil_div(var int: x, var int: y) =
 % Constraints
 constraint forall(s in Student, c in Class) (
     if exists (g in Group) (group_class[g] == c /\ student_prefers[s, g] != exclusion) then
-    assigned_group[s, c] in {g | g in Group where group_class[g] == c /\ student_prefers[s, g] != exclusion }
-    else assigned_group[s, c] = 0 endif 
+        assigned_group[s, c] in {g | g in Group where group_class[g] == c /\ student_prefers[s, g] != exclusion}
+    else
+        assigned_group[s, c] = 0
+    endif
 );
 
 % Ensure no bilocation (no student attends conflicting groups at the same time)
@@ -57,15 +59,25 @@ constraint forall(s in Student, g1 in Group, g2 in Group where g1 != g2 /\ group
 % Calculate time spent at university and wasted time
 constraint forall(s in Student, d in Day) (
     time_spent_at_university[s, d] =
-        max(0, max([group_start[g] + class_duration[group_class[g]] 
-                    | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g]) -
-        min([group_start[g] | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g]))
+        if exists(g in Group)(group_day[g] == d /\ assigned_group[s, group_class[g]] == g) then
+            max([group_start[g] + class_duration[group_class[g]] 
+                | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g]) -
+            min([group_start[g] 
+                | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g])
+        else
+            0
+        endif
 );
 
 constraint forall(s in Student, d in Day) (
     wasted_time[s, d] = 
-        max(0, time_spent_at_university[s, d] - 
-            sum([class_duration[group_class[g]] | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g]))
+        if exists(g in Group)(group_day[g] == d /\ assigned_group[s, group_class[g]] == g) then
+            max(0, time_spent_at_university[s, d] - 
+                sum([class_duration[group_class[g]] 
+                    | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g]))
+        else
+            0
+        endif
 );
 
 % Calculate break disappointment
@@ -78,7 +90,7 @@ constraint forall(s in Student) (
 constraint forall(s in Student) (
     preference_disappointment[s] =
         sum([max(0, max([student_prefers[s, g] | g in Group where group_class[g] == c]) - student_prefers[s, assigned_group[s, c]])
-             | c in Class])
+             | c in Class where assigned_group[s, c] != 0])
 );
 
 % Calculate total disappointment
