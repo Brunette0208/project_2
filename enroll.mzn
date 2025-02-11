@@ -72,9 +72,9 @@ constraint forall(s in Student, d in Day) (
 constraint forall(s in Student, d in Day) (
     wasted_time[s, d] = 
         if exists(g in Group)(group_day[g] == d /\ assigned_group[s, group_class[g]] == g) then
-            time_spent_at_university[s, d] - 
-            sum([class_duration[group_class[g]] 
-                | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g])
+            max(0, time_spent_at_university[s, d] - 
+                sum([class_duration[group_class[g]] 
+                    | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g]))
         else
             0
         endif
