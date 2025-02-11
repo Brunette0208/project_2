@@ -51,11 +51,18 @@ constraint forall(s in Student, g1 in Group, g2 in Group where g1 != g2 /\ group
     assigned_group[s, group_class[g1]] != g1 \/ assigned_group[s, group_class[g2]] != g2
 );
 
+% Respect exclusions (avoid assigning students to excluded groups)
+constraint forall(s in Student, c in Class) (
+    let {g = assigned_group[s, c]} in
+    (student_prefers[s, g] > exclusion)
+);
+
 % Calculate time spent at university and wasted time
 constraint forall(s in Student, d in Day) (
-    time_spent_at_university[s, d] = 
-        max([group_start[g] + class_duration[group_class[g]] | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g]) -
-        min([group_start[g] | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g])
+    time_spent_at_university[s, d] =
+        max(0, max([group_start[g] + class_duration[group_class[g]] 
+                    | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g]) -
+        min([group_start[g] | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g]))
 );
 
 constraint forall(s in Student, d in Day) (
@@ -72,8 +79,9 @@ constraint forall(s in Student) (
 
 % Calculate preference disappointment
 constraint forall(s in Student) (
-    preference_disappointment[s] = 
-        sum([student_prefers[s, g] - student_prefers[s, assigned_group[s, c]] | c in Class, g in Group where group_class[g] == c /\ student_prefers[s, g] > exclusion])
+    preference_disappointment[s] =
+        sum([max(0, student_prefers[s, g] - student_prefers[s, assigned_group[s, c]]) 
+             | c in Class, g in Group where group_class[g] == c /\ student_prefers[s, g] > exclusion])
 );
 
 % Calculate total disappointment
