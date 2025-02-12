@@ -30,17 +30,18 @@ array[Student, Class] of var Opt_Group: assigned_group;
 set of int: Opt_Group = 0..n_groups;
 
 % Helper Variables
-array[Student, Day] of var Time: time_spent_at_university;
-array[Student, Day] of var Time: wasted_time;
-array[Student] of var Time: break_disappointment;
+array[Student, Day] of var Time: day_start;
+array[Student, Day] of var Time: day_end;
+array[Student, Day] of var Time: time_spent_in_uni;
+array[Student, Day] of var Time: time_spent_learning;
+array[Student] of var Time: time_spent_on_breaks;
+array[Student] of var int: break_disappointment;
 array[Student] of var int: preference_disappointment;
 array[Student] of var int: total_disappointment;
-
 
 % helper function
 function var int: ceil_div(var int: x, var int: y) =
   x div y + ((x mod y) > 0);
-
 
 % Constraints
 constraint forall(s in Student, c in Class) (
@@ -56,34 +57,54 @@ constraint forall(s in Student, g1 in Group, g2 in Group where g1 != g2 /\ group
     assigned_group[s, group_class[g1]] != g1 \/ assigned_group[s, group_class[g2]] != g2
 );
 
-% Calculate time spent at university and wasted time
+% ------------------------------------------ %
+% DERIVED VARIABLES FOR BREAK DISAPPOINTMENT %
+% ------------------------------------------ %
+
+% For each student s and day d, compute the start of the day as the earliest start time
+% among groups assigned on day d. (If the student has no class on that day, we use 0.)
 constraint forall(s in Student, d in Day) (
-    time_spent_at_university[s, d] =
-        if exists(g in Group)(group_day[g] == d /\ assigned_group[s, group_class[g]] == g) then
+    day_start[s, d] = 
+        if exists(c in Class)(assigned_group[s, c] != 0 /\ group_day[assigned_group[s, c]] == d) then
+            min([group_start[g] | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g])
+        else
+            0
+        endif
+);
+
+% Similarly, compute the end of the day as the latest ending time.
+constraint forall(s in Student, d in Day) (
+    day_end[s, d] = 
+        if exists(c in Class)(assigned_group[s, c] != 0 /\ group_day[assigned_group[s, c]] == d) then
             max([group_start[g] + class_duration[group_class[g]] 
-                | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g]) -
-            min([group_start[g] 
                 | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g])
         else
             0
         endif
 );
 
+% Total time spent at the university per day.
 constraint forall(s in Student, d in Day) (
-    wasted_time[s, d] = 
-        if exists(g in Group)(group_day[g] == d /\ assigned_group[s, group_class[g]] == g) then
-            max(0, time_spent_at_university[s, d] - 
-                sum([class_duration[group_class[g]] 
-                    | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g]))
-        else
-            0
-        endif
+    time_spent_in_uni[s, d] = day_end[s, d] - day_start[s, d]
 );
 
-% Calculate break disappointment
+% Total time spent learning per day (sum of durations of assigned classes on that day).
+constraint forall(s in Student, d in Day) (
+    time_spent_learning[s, d] = 
+        sum([class_duration[group_class[g]] 
+            | g in Group where group_day[g] == d /\ assigned_group[s, group_class[g]] == g])
+);
+
+% Weekly wasted time: time at university minus learning time, summed over days.
+constraint forall(s in Student) (
+    time_spent_on_breaks[s] = 
+        sum([time_spent_in_uni[s, d] - time_spent_learning[s, d] | d in Day])
+);
+
+% Break disappointment: the wasted time normalized to full hours.
 constraint forall(s in Student) (
     break_disappointment[s] = 
-        ceil_div(sum([wasted_time[s, d] | d in Day]), n_time_units_in_hour)
+        ceil_div(max(0, time_spent_on_breaks[s]), n_time_units_in_hour)
 );
 
 % Calculate preference disappointment
