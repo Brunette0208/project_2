@@ -57,12 +57,9 @@ constraint forall(s in Student, g1 in Group, g2 in Group where g1 != g2 /\ group
     assigned_group[s, group_class[g1]] != g1 \/ assigned_group[s, group_class[g2]] != g2
 );
 
-% ------------------------------------------ %
-% DERIVED VARIABLES FOR BREAK DISAPPOINTMENT %
-% ------------------------------------------ %
+% VARIABLES FOR BREAK DISAPPOINTMENT %
 
-% For each student s and day d, compute the start of the day as the earliest start time
-% among groups assigned on day d. (If the student has no class on that day, we use 0.)
+
 constraint forall(s in Student, d in Day) (
     day_start[s, d] = 
         if exists(c in Class)(assigned_group[s, c] != 0 /\ group_day[assigned_group[s, c]] == d) then
@@ -72,7 +69,6 @@ constraint forall(s in Student, d in Day) (
         endif
 );
 
-% Similarly, compute the end of the day as the latest ending time.
 constraint forall(s in Student, d in Day) (
     day_end[s, d] = 
         if exists(c in Class)(assigned_group[s, c] != 0 /\ group_day[assigned_group[s, c]] == d) then
